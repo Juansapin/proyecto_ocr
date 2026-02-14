@@ -1,0 +1,5 @@
+venv/
+__pycache__/
+.DS_Store
+*.pyc
+data/      # Opcional: si tus imágenes son muy pesadas
