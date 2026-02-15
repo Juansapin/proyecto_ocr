@@ -1,0 +1,4 @@
+numpy<2.0.0
+paddleocr==2.7.3
+paddlepaddle
+opencv-python
