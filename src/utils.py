@@ -14,7 +14,7 @@ warnings.filterwarnings('ignore')
 # Se crea una clase que contiene todas las funciones a utlizar para el preprocesamiento lo que permite la clase es poder escoger o utilizar diferentes configuraciones
 # de parametros de los diferentes pasos del preprocesamiento para poder utilizarlos a la hora de hacer el tratamiento de las imagenes
 class OCRPrepocesador:
-    def __init__(self, tamano_estandar: int = 128):
+    def __init__(self, tamano_estandar: int = 1200):
         """
         tamano_estandar: Tamaño estandar para las imagenes
         """
@@ -104,7 +104,6 @@ class OCRPrepocesador:
             mean_sq = cv2.blur(image.astype(np.float64)**2, (window_size, window_size))
             std = np.sqrt(mean_sq - mean**2)
             
-            # Sauvola threshold
             threshold = mean * (1 + k * ((std / R) - 1))
             binary = np.where(image > threshold, 255, 0).astype(np.uint8)
             
@@ -229,7 +228,7 @@ class OCRPrepocesador:
     def resize_image(self, image: np.ndarray, 
                     height: Optional[int] = None) -> np.ndarray:
         if height is None:
-            height = self.target_height
+            height = self.tamano_estandar
         
         h, w = image.shape[:2]
         aspect_ratio = w / h
@@ -240,70 +239,108 @@ class OCRPrepocesador:
         self.pasos_preprocesamiento.append(f"Resize (h={height})")
         return resized
     
+    def validar_imagen(self, image: np.ndarray) -> bool:
+        """
+        Verifica que la imagen procesada tenga contenido válido.
+        Retorna False si la imagen está completamente blanca o negra.
+        """
+        if image is None or image.size == 0:
+            return False
+        
+        # Calcular estadísticas
+        mean_val = np.mean(image)
+        std_val = np.std(image)
+        
+        # Si la desviación estándar es muy baja, la imagen es uniforme
+        if std_val < 5:
+            return False
+        
+        # Si el promedio está muy cerca de 0 o 255, la imagen es uniforme
+        if mean_val < 10 or mean_val > 245:
+            return False
+        
+        return True
+    
     # Pipeline completo, esta función permite ejecutar todos los pasos dependiendo de los parametros de las subfunciones
     def preprocess(self, image: np.ndarray, 
-                   pipeline: str = 'standard') -> np.ndarray:
+                   pipeline: str = 'estandar') -> np.ndarray:
         """
-        Apply a complete preprocessing pipeline.
+        Aplica un pipeline completo de preprocesamiento.
         
         Pipelines:
-        - 'standard': Basic pipeline for clean scans
-        - 'aggressive': For poor quality or degraded documents
-        - 'minimal': Quick preprocessing for high-quality images
-        - 'handwriting': Optimized for handwritten text
+        - 'estandar': Pipeline básico para escaneos limpios
+        - 'agresivo': Para documentos de baja calidad o degradados
+        - 'minimalista': Preprocesamiento rápido para imágenes de alta calidad
+        - 'escritura': Optimizado para texto manuscrito
+        - 'libro': Optimizado para páginas de libro
         
         Args:
-            image: Input image (BGR or grayscale)
-            pipeline: Pipeline type
+            image: Imagen de entrada (BGR o escala de grises)
+            pipeline: Tipo de pipeline
             
         Returns:
-            Preprocessed image
+            Imagen preprocesada
         """
+
         self.pasos_preprocesamiento = []
         
-        if pipeline == 'standard':
-            # Standard pipeline for typical scanned documents
+        if pipeline == 'estandar':
             img = self.escala_grises(image)
             img = self.quita_ruido(img, metodo='gaussian')
             img = self.mejora_contraste(img, metodo='clahe')
             img = self.binarize(img, metodo='adaptive_gaussian')
-            img = self.operaciones_morfologicas(img, operation='opening')
+            img = self.operaciones_morfologicas(img, operacion='opening')
             img = self.proceso_rotacion(img)
             img = self.resize_image(img)
             
-        elif pipeline == 'aggressive':
-            # Aggressive pipeline for degraded documents
+        elif pipeline == 'agresivo':
             img = self.escala_grises(image)
             img = self.quita_ruido(img, metodo='nlm')
             img = self.mejora_contraste(img, metodo='clahe')
             img = self.binarize(img, metodo='sauvola')
-            img = self.operaciones_morfologicas(img, operation='closing')
-            img = self.operaciones_morfologicas(img, operation='opening')
+            img = self.operaciones_morfologicas(img, operacion='closing')
+            img = self.operaciones_morfologicas(img, operacion='opening')
             img = self.proceso_rotacion(img)
-            img = self.quitar_bordes(img, border_size=5)
+            img = self.quitar_bordes(img, tamano_borde=5)
             img = self.resize_image(img)
             
-        elif pipeline == 'minimal':
-            # Minimal pipeline for high-quality images
+        elif pipeline == 'minimalista':
             img = self.escala_grises(image)
             img = self.binarize(img, metodo='otsu')
             img = self.resize_image(img)
             
-        elif pipeline == 'handwriting':
-            # Optimized for handwritten text (like IAM dataset)
+        elif pipeline == 'escritura':
             img = self.escala_grises(image)
             img = self.quita_ruido(img, metodo='bilateral')
             img = self.mejora_contraste(img, metodo='clahe')
             img = self.binarize(img, metodo='adaptive_gaussian')
-            img = self.operaciones_morfologicas(img, operation='opening', kernel_size=(2, 2))
+            img = self.operaciones_morfologicas(img, operacion='opening', kernel_size=(2, 2))
             img = self.resize_image(img)
+    
+        elif pipeline == 'libro':
+            # Recortar bordes antes de procesar (evita áreas negras)
+            h, w = image.shape[:2]
+            margen = int(min(h, w) * 0.02)  # 2% de margen
+            image = image[margen:h-margen, margen:w-margen]
+            self.pasos_preprocesamiento.append(f"Bordes recortados ({margen}px)")
+            
+            img = self.escala_grises(image)
+            img = self.quita_ruido(img, metodo='bilateral')
+            img = self.mejora_contraste(img, metodo='clahe')
+            img = self.binarize(img, metodo='otsu')
+            img = self.operaciones_morfologicas(img, operacion='opening', kernel_size=(2, 2))
+            # NO hacer resize para máxima calidad en libros
+            self.pasos_preprocesamiento.append("Tamaño original mantenido")
             
         else:
-            raise ValueError(f"Unknown pipeline: {pipeline}")
+            raise ValueError(f"Pipeline desconocido: {pipeline}")
+        
+        if not self.validar_imagen(img):
+            print("La imagen procesada parece estar vacía o uniforme")
         
         return img
     
-    def reumen_pipeline(self) -> str:
+    def resumen_pipeline(self) -> str:
         return " → ".join(self.pasos_preprocesamiento)
 
 
@@ -319,9 +356,8 @@ if __name__ == "__main__":
     prep = OCRPrepocesador()
     
     # Mostrar resultados
-    result = prep.preprocess(sample, pipeline='standard')
+    result = prep.preprocess(sample, pipeline='estandar')
     cv2.imshow('Resultado', result)
     cv2.waitKey(0)
     
     print("Demo completada!")
-
