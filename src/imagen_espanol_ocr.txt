@@ -1,0 +1,42 @@
+RESULTADO OCR - TESSERACT
+============================================================
+
+Archivo:  imagen_espanol.jpeg
+Pipeline: libro
+Caracteres detectados: 1322
+
+------------------------------------------------------------
+TEXTO:
+------------------------------------------------------------
+
+sabe dónde, comenzaron a difundirse ciertas declara-
+ciones inquietantes, por no decir francamente amena-
+zadoras, como por ejemplo, Quien no ponga la inmor-
+tal bandera de la patria en la ventana de su casa no
+merece estar vivo, Quienes no anden con la bandera
+nacional bien a la vista es porque se han vendido a la
+muerte, Unete, sé patriota, compra una bandera,
+Compra otra, Compra otra más, Abajo los enemigos
+dela vida, la suerte que tienen es que ya no haya muer-
+te. Las calles eran un auténtico real de insignias des-
+plegadas batidas por el viento, si soplaba, o, cuando
+no, un ventilador eléctrico colocado con maña hacía
+i i la potencia del aparato no era sufi-
+HH estandarte virilmente ondease, obli-
+Esos chasquidos de látigo que tanto
+híritus marciales, al menos permitía
+z e. hte ondearan los colores de la patria.
+ld , pocas, con mucho sigilo murmura-
+Jl Bera una exageración, un despropósi-
+cell pato que tarde no quedaría más reme-
+dloiqu enredo de banderas, Y cuanto antes
+oh jor, porque de la misma manera que
+des par en el pudín empacha el paladar y
+paudál peso digestivo, también el normal y más
+; : 9 por los emblemas patrióticos acaba-
+ch chacota si permitimos que resbale en
+? Ja dos contra el pudor, como los exhi-
+A ar lips de execrada memoria. Áde-
+dejado de matar, una de
+que hartos comence»
+,
